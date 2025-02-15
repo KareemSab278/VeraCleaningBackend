@@ -1,0 +1,37 @@
+Experimental Management System
+This project is an experimental management system built with Node.js, Express, and MongoDB. It provides endpoints for managing jobs and managers, and it includes logic (via Mongoose middleware) to automatically update the status of tasks based on provided fields.
+
+Project Structure
+• app.js – Contains the core Express application, MongoDB connection setup, and schema definitions. The task schema uses pre-save middleware that sets a task’s status to "completed" if both an end time and an image are provided; otherwise, the status remains "pending".
+
+• tests.js – Contains integration tests that use Mocha and Supertest to validate the behavior of the endpoints.
+
+Endpoints
+Jobs
+
+• POST /jobs
+Creates a new job with a set of employees and tasks. When a task is submitted without an image and end time, its status remains "pending". If an image and end time are provided, the middleware marks the task as "completed".
+
+• GET /jobs
+Retrieves all jobs.
+
+Managers
+
+• POST /managers
+Creates a new manager. The expected information includes a username, password, and full name.
+
+• GET /managers
+Retrieves all managers.
+
+Installation
+Clone the repository and change into the backend directory.
+Install the production dependencies (Express, Mongoose, mongoose-sequence) as well as development dependencies (Mocha and Supertest for testing).
+Running the Application
+Before starting the application, ensure that MongoDB is running on your machine. Then, start the server using Node. The application will run on port 3000 (or on the port specified in your configuration).
+
+Running Tests
+The tests use Mocha and Supertest to exercise the endpoints. You can set the environment variable (NODE_ENV) to "test" and run the tests. The tests will connect to a dedicated test database, run the integration tests, and then clean up the test database once finished.
+
+Additional Information
+Task Schema Middleware (from app.js)
+The pre-save middleware in the task schema checks if both endTime and image are provided. If they are, it marks the task as "completed"; if not, the task remains "pending".
