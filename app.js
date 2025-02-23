@@ -1,9 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
+const cors = require('cors'); // Import the cors package
 const app = express();
 
 // Middleware to parse JSON bodies
+app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
@@ -38,7 +40,7 @@ taskSchema.plugin(AutoIncrement, { inc_field: 'taskId' });
 
 // Define Employee schema (subdocument)
 const employeeSchema = new mongoose.Schema({
-  employeeId: String, // You can also consider auto-incrementing this if numeric IDs are desired
+  employeeId: Number, //changed this to number because of auto-incrementation
   fullName: String,
   tasks: [taskSchema],
 });
@@ -67,7 +69,6 @@ managerSchema.plugin(AutoIncrement, {inc_field: 'id'});
 const Manager = mongoose.model('Manager', managerSchema);
 
 // Routes for Jobs
-
 // Create a new job
 app.post('/jobs', async (req, res) => {
   try {
@@ -89,7 +90,26 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-// Routes for Managers
+// app.get('/employee', async (req, res) => {
+//   try {
+//     const employee = await Employee.find();
+//     res.json(employee);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+
+//wrote all this and forgot i dont even have a collection for employees -_- ...
+
+// // create a new employee
+// app.post('/employee', async (req, res) => {
+//   try{const newEmployee = new Employee(req.body);
+//     await newEmployee.save();
+//     res.status(201).json(newEmployee);}
+//     catch{
+//       console.error('failed to create a new emp', 400)
+//     }
+// })
 
 // Create a new manager
 app.post('/managers', async (req, res) => {
@@ -121,3 +141,51 @@ if (require.main === module) {
 } else {
   module.exports = app;
 }
+
+//Update the job for employees arr and add them in
+app.patch("/jobs/:jobId/assign", async (req, res) => {
+  const { jobId } = req.params;
+  const { employeeName, employeeTask } = req.body;
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    let employee = job.employees.find(emp => emp.fullName === employeeName);
+
+    if (employee) {
+      // Employee exists, add task if not already in the list
+      if (!employee.tasks.some(task => task.taskName === employeeTask)) {
+        employee.tasks.push({ taskName: employeeTask });
+      }
+    } else {
+      // Add new employee with task
+      job.employees.push({
+        fullName: employeeName,
+        tasks: [{ taskName: employeeTask }],
+      });
+    }
+
+    await job.save();
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to assign employee" });
+  }
+});
+
+
+// Get all employees from a specific job
+app.get('/jobs/:jobId/employees', async (req, res) => {
+  const { jobId } = req.params;
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    res.json(job.employees); // Send employees array
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
